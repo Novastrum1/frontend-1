@@ -15,7 +15,7 @@ describe("VELTRIXAE API client", () => {
     const fetchMock = vi.fn().mockResolvedValue(json({ tokens: [token] }));
     vi.stubGlobal("fetch", fetchMock);
     await expect(api.tokens()).resolves.toEqual({ tokens: [token] });
-    expect(String(fetchMock.mock.calls[0][0])).toBe("https://api.example/api/v1/tokens");
+    expect(String(fetchMock.mock.calls[0][0])).toBe(`${window.location.origin}/api/aggregator/tokens`);
     expect(new Headers(fetchMock.mock.calls[0][1].headers).get("x-request-id")).toBeTruthy();
   });
 
@@ -38,12 +38,12 @@ describe("VELTRIXAE API client", () => {
   it("never fabricates data when the API is unconfigured", async () => {
     const original = configMock.config.apiUrl;
     configMock.config.apiUrl = undefined;
-    const fetchMock = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue(json({error:{code:"NOT_CONFIGURED",message:"The aggregator backend URL is not configured on the server."}},503));
     vi.stubGlobal("fetch", fetchMock);
     try {
       await expect(api.tokens()).rejects.toBeInstanceOf(ApiError);
       await expect(api.tokens()).rejects.toMatchObject({ code: "NOT_CONFIGURED" });
-      expect(fetchMock).not.toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalled();
     } finally {
       configMock.config.apiUrl = original;
     }
