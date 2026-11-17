@@ -4,7 +4,6 @@ import {
   assetDetailSchema,
   assetSearchResponseSchema,
   buildResponseSchema,
-  contractRegistryResponseSchema,
   errorEnvelopeSchema,
   indexedAnalyticsSchema,
   marketSchema,
@@ -20,6 +19,7 @@ import {
   priceSnapshotSchema,
   quoteRequestSchema,
   quoteSchema,
+  readinessSchema,
   submitResponseSchema,
   tokenSchema,
   tokensResponseSchema,
@@ -109,7 +109,7 @@ export const api = {
   overview: (signal?: AbortSignal) => request("analytics/overview", overviewSchema, { signal }),
   prices: (signal?: AbortSignal) => request("prices", priceSnapshotSchema, { signal }),
   portfolioHistory: (signal?: AbortSignal) => request("portfolio/history", portfolioHistoryResponseSchema, { signal }),
-  contractRegistry: (signal?: AbortSignal) => request("contracts/registry", contractRegistryResponseSchema, { signal }),
+  readiness: (signal?: AbortSignal) => request("readiness", readinessSchema, { signal }),
   searchAssets: (query: AssetSearchQuery, signal?: AbortSignal) =>
     request(
       `assets${buildQuery({ q: query.q, code: query.code, issuer: query.issuer, contract: query.contract, limit: typeof query.limit === "number" ? query.limit : undefined })}`,

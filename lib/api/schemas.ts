@@ -413,13 +413,24 @@ export const analyticsSeriesSchema = z.object({
 export type AnalyticsSeries = z.infer<typeof analyticsSeriesSchema>;
 export const analyticsSeriesResponseSchema = z.array(analyticsSeriesSchema);
 
-export const contractRegistryResponseSchema = z.object({
-  verified: z.boolean(),
-  networkPassphrase: z.string().min(1),
-  deploymentLedger: z.number().int().nonnegative(),
-  sourceCommit: z.string().min(1),
-  swap: z.string().min(1).optional(),
-  router: z.string().min(1).optional(),
-  factory: z.string().min(1).optional(),
+export const readinessSchema = z.object({
+  network: z.literal("testnet"),
+  mainnetEnabled: z.literal(false),
+  custody: z.literal("none"),
+  submitsTransactions: z.literal(false),
+  checkedAt: unixMilliseconds,
+  ledger: z.number().int().nonnegative().nullable(),
+  networkVerified: z.boolean(),
+  deployment: z.object({ status: z.enum(["verified", "not-configured", "failed"]), code: z.string().nullable() }),
+  liquidity: z.object({
+    status: z.enum(["funded", "unfunded", "empty", "unknown"]),
+    pools: z.number().int().nonnegative().nullable(),
+    fundedPools: z.number().int().nonnegative().nullable(),
+    code: z.string().nullable(),
+  }),
+  aggregator: z.object({ status: z.enum(["not-deployed", "verified", "unknown"]) }),
+  quotesAvailable: z.boolean(),
+  swapPreparationAvailable: z.boolean(),
+  blockers: z.array(z.enum(["NETWORK_UNVERIFIED", "AMM_NOT_CONFIGURED", "AMM_UNVERIFIED", "NO_POOLS", "NO_FUNDED_POOLS", "AGGREGATOR_NOT_DEPLOYED"])),
 });
-export type ContractRegistry = z.infer<typeof contractRegistryResponseSchema>;
+export type Readiness = z.infer<typeof readinessSchema>;
