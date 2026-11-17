@@ -375,8 +375,8 @@ export const errorEnvelopeSchema = z.object({
   error: z.object({
     code: z.string().min(1),
     message: z.string().min(1),
-    requestId: z.string().min(1),
-    retryable: z.boolean(),
+    requestId: z.string().min(1).optional(),
+    retryable: z.boolean().optional(),
     details: z.record(z.string(), z.unknown()).optional(),
   }),
 });

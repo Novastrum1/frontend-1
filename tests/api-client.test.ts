@@ -38,7 +38,7 @@ describe("VELTRIXAE API client", () => {
   it("never fabricates data when the API is unconfigured", async () => {
     const original = configMock.config.apiUrl;
     configMock.config.apiUrl = undefined;
-    const fetchMock = vi.fn().mockResolvedValue(json({error:{code:"NOT_CONFIGURED",message:"The aggregator backend URL is not configured on the server."}},503));
+    const fetchMock = vi.fn().mockImplementation(async () => json({error:{code:"NOT_CONFIGURED",message:"The aggregator backend URL is not configured on the server."}},503));
     vi.stubGlobal("fetch", fetchMock);
     try {
       await expect(api.tokens()).rejects.toBeInstanceOf(ApiError);

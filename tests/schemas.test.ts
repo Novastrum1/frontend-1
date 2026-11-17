@@ -48,8 +48,9 @@ describe("backend API contracts", () => {
     ).toThrow();
   });
 
-  it("requires request provenance in backend errors", () => {
-    expect(() => errorEnvelopeSchema.parse({ error: { code: "BAD", message: "Bad request" } })).toThrow();
+  it("accepts the backend's minimal error envelope and retains optional provenance", () => {
+    expect(errorEnvelopeSchema.parse({ error: { code: "BAD", message: "Bad request" } }).error.code).toBe("BAD");
+    expect(errorEnvelopeSchema.parse({ error: { code: "BAD", message: "Bad request", requestId: "req-1", retryable: false } }).error.requestId).toBe("req-1");
   });
 });
 
