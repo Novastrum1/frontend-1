@@ -25,6 +25,26 @@ function assertTestnetOnly(): void {
 
 assertTestnetOnly();
 
+/**
+ * Production APIs must be HTTPS. During local development, allow the explicit
+ * configured API origin so a Testnet backend on a different localhost port is
+ * not rejected by the browser's Content Security Policy.
+ */
+function developmentApiConnectSource(): string {
+  if (process.env.NODE_ENV !== "development") return "";
+  const raw = process.env.NEXT_PUBLIC_VELTRIXAE_API_URL;
+  if (!raw) return "";
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "http:" || !["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) return "";
+    return url.origin;
+  } catch {
+    return "";
+  }
+}
+
+const localApiConnectSource = developmentApiConnectSource();
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -42,7 +62,7 @@ const nextConfig: NextConfig = {
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
       { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
       { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-      { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" },
+      { key: "Content-Security-Policy", value: `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https:${localApiConnectSource ? ` ${localApiConnectSource}` : ""}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'` },
     ] }];
   },
 };
