@@ -14,7 +14,7 @@ const publicConfigSchema = z.object({
 });
 
 export const config = publicConfigSchema.parse({
-  apiUrl: process.env.NEXT_PUBLIC_VELTRIXAE_API_URL || undefined,
+  apiUrl: process.env.NEXT_PUBLIC_VELTRIXAE_API_URL || (process.env.NODE_ENV === "development" ? "http://127.0.0.1:3100" : undefined),
   rpcUrl: process.env.NEXT_PUBLIC_STELLAR_RPC_URL || "https://soroban-testnet.stellar.org",
   horizonUrl: process.env.NEXT_PUBLIC_STELLAR_HORIZON_URL || "https://horizon-testnet.stellar.org",
   network: "TESTNET",

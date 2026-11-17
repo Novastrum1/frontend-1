@@ -53,15 +53,18 @@ function buildQuery(params: Record<string, string | number | boolean | undefined
 }
 
 async function request<T>(path: string, schema: z.ZodType<T>, init?: RequestInit, retries = 1): Promise<T> {
-  if (!config.apiUrl) throw new ApiError("VELTRIXAE API is not configured.", 503, "NOT_CONFIGURED");
+  if (typeof window === "undefined" && !config.apiUrl) throw new ApiError("VELTRIXAE API is not configured.", 503, "NOT_CONFIGURED");
   const requestId = createRequestId();
   let lastError: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     const attemptRequestId = createRequestId();
     try {
-      const timeout = AbortSignal.timeout(12_000);
+      const timeout = AbortSignal.timeout(25_000);
       const signal = init?.signal ? AbortSignal.any([timeout, init.signal]) : timeout;
-      const response = await fetch(new URL(`/api/v1/${path}`, config.apiUrl), {
+      const url = typeof window === "undefined"
+        ? new URL(`/api/v1/${path}`, config.apiUrl)
+        : new URL(`/api/aggregator/${path}`, window.location.origin);
+      const response = await fetch(url, {
         ...init,
         headers: { accept: "application/json", "x-request-id": attemptRequestId, ...(init?.body ? { "content-type": "application/json" } : {}), ...init?.headers },
         signal,

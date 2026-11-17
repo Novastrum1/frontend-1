@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/api/client";
 import type { Quote, QuoteRequest, Readiness, Token } from "@/lib/api/schemas";
 import { fromBaseUnits, quoteRate, toBaseUnits } from "@/lib/amounts";
-import { config } from "@/lib/config";
 import { simulateTransactionXdr, submitSignedTransactionXdr } from "@/lib/stellar/simulation";
 import { assetCode } from "@/lib/stellar/horizon";
 import { useAccount } from "@/components/wallet/account-provider";
@@ -23,12 +22,12 @@ export function SwapWidget(){
   const wallet=useWallet(); const {account}=useAccount(); const requestSequence=useRef(0);
   const [assets,setAssets]=useState<Token[]>([]); const [sell,setSell]=useState<Token>(); const [buy,setBuy]=useState<Token>();
   const [amount,setAmount]=useState(""); const [slippage,setSlippage]=useState(50); const [settings,setSettings]=useState(false);
-  const [quote,setQuote]=useState<Quote>(); const [status,setStatus]=useState<Status>("idle"); const [message,setMessage]=useState(""); const [hash,setHash]=useState(""); const [assetError,setAssetError]=useState(config.apiUrl?"":"The aggregator API is not configured."); const [now,setNow]=useState(()=>Date.now());
+  const [quote,setQuote]=useState<Quote>(); const [status,setStatus]=useState<Status>("idle"); const [message,setMessage]=useState(""); const [hash,setHash]=useState(""); const [assetError,setAssetError]=useState(""); const [now,setNow]=useState(()=>Date.now());
   const [readiness,setReadiness]=useState<Readiness>(); const [readinessError,setReadinessError]=useState(""); const [preparedFee,setPreparedFee]=useState<string>(""); const [preparedContracts,setPreparedContracts]=useState<{swap?:string;router?:string;factory?:string}>();
 
-  useEffect(()=>{const controller=new AbortController();if(!config.apiUrl)return()=>controller.abort();api.tokens(controller.signal).then(({tokens})=>{setAssets(tokens);setSell(tokens[0]);setBuy(tokens[1])}).catch(error=>{if(!controller.signal.aborted)setAssetError(error instanceof Error?error.message:"Token registry unavailable.")});return()=>controller.abort()},[]);
+  useEffect(()=>{const controller=new AbortController();api.tokens(controller.signal).then(({tokens})=>{setAssets(tokens);setSell(tokens[0]);setBuy(tokens[1])}).catch(error=>{if(!controller.signal.aborted)setAssetError(error instanceof Error?error.message:"Token registry unavailable.")});return()=>controller.abort()},[]);
 
-  useEffect(()=>{const controller=new AbortController();if(!config.apiUrl)return()=>controller.abort();api.readiness(controller.signal).then(setReadiness).catch(error=>{if(!controller.signal.aborted)setReadinessError(error instanceof Error?error.message:"Backend readiness is unavailable.")});return()=>controller.abort()},[]);
+  useEffect(()=>{const controller=new AbortController();api.readiness(controller.signal).then(setReadiness).catch(error=>{if(!controller.signal.aborted)setReadinessError(error instanceof Error?error.message:"Backend readiness is unavailable.")});return()=>controller.abort()},[]);
 
   const request=useMemo<QuoteRequest|undefined>(()=>{if(!sell||!buy||!amount)return;try{const units=toBaseUnits(amount,sell.decimals);if(BigInt(units)<=0n)return;return{tokenIn:sell.contract,tokenOut:buy.contract,amount:units,kind:"exactIn",slippageBps:slippage,maxHops:3}}catch{return}},[amount,buy,sell,slippage]);
 
