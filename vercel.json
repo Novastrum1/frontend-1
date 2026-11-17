@@ -5,10 +5,7 @@
   "installCommand": "pnpm install --frozen-lockfile",
   "build": {
     "env": {
-      "NEXT_PUBLIC_STELLAR_NETWORK": "testnet",
-      "NEXT_PUBLIC_MAINNET_ENABLED": "false",
-      "MAINNET_RELEASE_FLAG": "false",
-      "MAINNET_CONTRACTS_VERIFIED": "false"
+      "NEXT_PUBLIC_STELLAR_NETWORK": "testnet"
     }
   }
 }

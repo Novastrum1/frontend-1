@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { config } from "@/lib/config";
+import { config, mainnetGate } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -20,13 +20,6 @@ type MainnetGateStatus = {
   contractsVerified: boolean;
   reasons: string[];
 };
-
-function readEnvFlag(name: string): boolean {
-  const raw = process.env[name];
-  if (typeof raw !== "string") return false;
-  const normalized = raw.trim().toLowerCase();
-  return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
-}
 
 function isValidUrl(value: string | undefined | null): boolean {
   if (!value) return false;
@@ -83,46 +76,31 @@ function buildConfigIssues(integrations: Record<string, IntegrationStatus>): Con
   const network = typeof config.network === "string" ? config.network.trim().toLowerCase() : "";
   if (!network) {
     issues.push({ field: "network", message: "Network is not configured" });
-  } else if (!["mainnet", "public", "testnet", "futurenet", "standalone", "local"].includes(network)) {
+  } else if (network !== "testnet") {
     issues.push({ field: "network", message: `Unrecognized network "${config.network}"` });
   }
 
   return issues;
 }
 
-function buildMainnetGate(network: string): MainnetGateStatus {
-  const requested = network === "mainnet" || network === "public";
-  const releaseFlag = readEnvFlag("MAINNET_RELEASE_ENABLED");
-  const contractsVerified = readEnvFlag("MAINNET_CONTRACTS_VERIFIED");
-  const reasons: string[] = [];
-
-  if (requested) {
-    if (!releaseFlag) {
-      reasons.push("MAINNET_RELEASE_ENABLED is not set");
-    }
-    if (!contractsVerified) {
-      reasons.push("MAINNET_CONTRACTS_VERIFIED is not set");
-    }
-  }
-
+function buildMainnetGate(): MainnetGateStatus {
   return {
-    requested,
-    enabled: requested && releaseFlag && contractsVerified,
-    releaseFlag,
-    contractsVerified,
-    reasons,
+    requested: false,
+    enabled: mainnetGate.enabled,
+    releaseFlag: false,
+    contractsVerified: false,
+    reasons: [mainnetGate.reason],
   };
 }
 
 export function GET() {
   const integrations = buildIntegrationStatus();
   const configIssues = buildConfigIssues(integrations);
-  const network = typeof config.network === "string" ? config.network.trim().toLowerCase() : "";
-  const mainnetGate = buildMainnetGate(network);
+  const mainnetStatus = buildMainnetGate();
 
   const integrationsReady = Object.values(integrations).every((integration) => integration.ready);
   const configValid = configIssues.length === 0;
-  const mainnetBlocked = mainnetGate.requested && !mainnetGate.enabled;
+  const mainnetBlocked = mainnetStatus.requested && !mainnetStatus.enabled;
 
   const healthy = configValid && integrationsReady && !mainnetBlocked;
 
@@ -139,7 +117,7 @@ export function GET() {
         valid: configValid,
         issues: configIssues,
       },
-      mainnetGate,
+      mainnetGate: mainnetStatus,
       timestamp: new Date().toISOString(),
     },
     {
