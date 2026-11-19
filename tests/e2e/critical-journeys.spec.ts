@@ -2,6 +2,21 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 async function mockTestnetServices(page: Page) {
+  await page.route("**/api/aggregator/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const readiness = {
+      network: "testnet", mainnetEnabled: false, custody: "none", submitsTransactions: false,
+      checkedAt: Date.now(), networkVerified: true, ledger: 123,
+      deployment: { status: "verified", code: null },
+      liquidity: { status: "empty", pools: 0, fundedPools: 0, code: null },
+      aggregator: { status: "not-deployed" }, quotesAvailable: false,
+      swapPreparationAvailable: false, blockers: ["NO_POOLS", "AGGREGATOR_NOT_DEPLOYED"],
+    };
+    const body = path.endsWith("/readiness") ? readiness : path.endsWith("/tokens") ? { tokens: [] } :
+      { error: { code: "NOT_CONFIGURED", message: "Endpoint unavailable in this fixture." } };
+    await route.fulfill({ status: path.endsWith("/readiness") || path.endsWith("/tokens") ? 200 : 503,
+      contentType: "application/json", body: JSON.stringify(body) });
+  });
   await page.route("https://horizon-testnet.stellar.org/**", async (route) => {
     await route.fulfill({
       status: 200,
@@ -48,8 +63,10 @@ test("navigates to swaps and blocks unverified contract writes", async ({ page }
   await page.goto("/app");
   await page.getByRole("link", { name: /advanced swap/i }).click();
   await expect(page).toHaveURL(/\/app\/swap$/);
-  await expect(page.getByRole("alert").filter({ hasText: "Write actions are disabled" })).toBeVisible();
-  await expect(page.getByText("The contract registry is unverified.")).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: "Write actions disabled" })).toBeVisible();
+  await expect(page.getByRole("alert")).toContainText("no deployed aggregator yet");
+  await expect(page.getByText("Stellar Testnet verified", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Prepare swap", exact: true })).toHaveCount(0);
 });
 
 test("landing and application routes have no serious accessibility violations", async ({ page }) => {
