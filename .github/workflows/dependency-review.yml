@@ -1,13 +1,21 @@
 name: Dependency Review
-on: pull_request
+on:
+  pull_request:
 permissions:
   contents: read
 jobs:
   dependency-review:
+    name: Dependency review
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/dependency-review-action@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # verified upstream commit
         with:
           fail-on-severity: moderate
-          comment-summary-in-pr: always
+          fail-on-scopes: runtime, development, unknown
+          comment-summary-in-pr: never
+          retry-on-snapshot-warnings: true
+          retry-on-snapshot-warnings-timeout: 120
