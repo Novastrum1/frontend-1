@@ -63,8 +63,9 @@ test("navigates to swaps and blocks unverified contract writes", async ({ page }
   await page.goto("/app");
   await page.getByRole("link", { name: /advanced swap/i }).click();
   await expect(page).toHaveURL(/\/app\/swap$/);
-  await expect(page.getByRole("alert").filter({ hasText: "Write actions disabled" })).toBeVisible();
-  await expect(page.getByRole("alert")).toContainText("no deployed aggregator yet");
+  const writeWarning = page.getByRole("alert").filter({ hasText: "Write actions disabled" });
+  await expect(writeWarning).toBeVisible();
+  await expect(writeWarning).toContainText("no deployed aggregator yet");
   await expect(page.getByText("Stellar Testnet verified", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Prepare swap", exact: true })).toHaveCount(0);
 });
